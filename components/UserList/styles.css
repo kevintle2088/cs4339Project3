@@ -1,0 +1,12 @@
+.user-list-title {
+	margin: 4px 0 10px;
+}
+
+.user-list-state {
+	min-height: 100px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+}

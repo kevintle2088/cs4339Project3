@@ -1,0 +1,12 @@
+.user-detail-state {
+	min-height: 160px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+}
+
+.user-detail-photo-link {
+	align-self: flex-start;
+}

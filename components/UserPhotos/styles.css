@@ -1,0 +1,54 @@
+.user-photos-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.user-photos-heading {
+	margin-bottom: 6px;
+}
+
+.user-photo-card {
+	border-radius: 10px;
+}
+
+.user-photo-image {
+	max-height: 460px;
+	object-fit: contain;
+	background-color: #f8f8f8;
+}
+
+.user-photo-date {
+	margin-bottom: 8px;
+}
+
+.user-photo-divider {
+	margin: 10px 0;
+}
+
+.photo-comment-item {
+	padding: 8px 0;
+	border-bottom: 1px solid #eee;
+}
+
+.photo-comment-item:last-child {
+	border-bottom: none;
+}
+
+.photo-comment-user-link {
+	text-decoration: none;
+	font-weight: 600;
+}
+
+.photo-comment-user-link:hover {
+	text-decoration: underline;
+}
+
+.user-photos-state {
+	min-height: 180px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+}
