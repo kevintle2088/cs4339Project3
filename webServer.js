@@ -9,7 +9,7 @@ const app = express();
 
 // define these in env and import in this file
 const port = process.env.PORT || 3001;
-const mongoUrl = process.env.MONGO_URL || 'mongodb://127.0.0.1/project2';
+const mongoUrl = process.env.MONGO_URL || 'mongodb://127.0.0.1/project3';
 
 const USER_LIST_PROJECTION = '_id first_name last_name';
 const USER_DETAIL_PROJECTION = '_id first_name last_name location description occupation';

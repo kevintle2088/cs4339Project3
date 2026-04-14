@@ -11,6 +11,7 @@ import {
   ListItem,
   Typography,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../lib/api';
 
@@ -18,10 +19,38 @@ import './styles.css';
 
 function UserPhotos() {
   const { userId } = useParams();
-  const [photos, setPhotos] = React.useState([]);
-  const [owner, setOwner] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState('');
+  const {
+    data: owner = null,
+    isPending: isOwnerPending,
+    isError: isOwnerError,
+  } = useQuery({
+    queryKey: ['users', 'detail', userId],
+    queryFn: async () => {
+      const response = await api.get(`/user/${userId}`);
+      return response.data || null;
+    },
+  });
+
+  const {
+    data: photos = [],
+    isPending: isPhotosPending,
+    isError: isPhotosError,
+  } = useQuery({
+    queryKey: ['photos', 'by-user', userId],
+    queryFn: async () => {
+      try {
+        const response = await api.get(`/photosOfUser/${userId}`);
+        return response.data || [];
+      } catch (photosErr) {
+        const statusCode = photosErr?.response?.status;
+        if (statusCode === 400 || statusCode === 404) {
+          return [];
+        }
+
+        throw photosErr;
+      }
+    },
+  });
 
   const formatDateTime = (dateTimeString) => {
     const normalized = dateTimeString?.replace(' ', 'T');
@@ -39,52 +68,7 @@ function UserPhotos() {
     });
   };
 
-  React.useEffect(() => {
-    let isMounted = true;
-
-    async function fetchData() {
-      try {
-        setLoading(true);
-        setError('');
-
-        const userResponse = await api.get(`/user/${userId}`);
-
-        let fetchedPhotos = [];
-        try {
-          const photosResponse = await api.get(`/photosOfUser/${userId}`);
-          fetchedPhotos = photosResponse.data || [];
-        } catch (photosErr) {
-          const statusCode = photosErr?.response?.status;
-          if (statusCode !== 400 && statusCode !== 404) {
-            throw photosErr;
-          }
-        }
-
-        if (isMounted) {
-          setPhotos(fetchedPhotos);
-          setOwner(userResponse.data || null);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setPhotos([]);
-          setOwner(null);
-          setError('Unable to load photos for this user.');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    fetchData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userId]);
-
-  if (loading) {
+  if (isOwnerPending || isPhotosPending) {
     return (
       <div className="user-photos-state">
         <CircularProgress size={28} />
@@ -93,8 +77,8 @@ function UserPhotos() {
     );
   }
 
-  if (error) {
-    return <Alert severity="error">{error}</Alert>;
+  if (isOwnerError || isPhotosError) {
+    return <Alert severity="error">Unable to load photos for this user.</Alert>;
   }
 
   if (!owner) {
