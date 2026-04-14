@@ -7,6 +7,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../lib/api';
 
@@ -14,41 +15,19 @@ import './styles.css';
 
 function UserDetail() {
   const { userId } = useParams();
-  const [user, setUser] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState('');
+  const {
+    data: user = null,
+    isPending,
+    isError,
+  } = useQuery({
+    queryKey: ['users', 'detail', userId],
+    queryFn: async () => {
+      const response = await api.get(`/user/${userId}`);
+      return response.data || null;
+    },
+  });
 
-  React.useEffect(() => {
-    let isMounted = true;
-
-    async function fetchUser() {
-      try {
-        setLoading(true);
-        setError('');
-        const response = await api.get(`/user/${userId}`);
-        if (isMounted) {
-          setUser(response.data || null);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setUser(null);
-          setError('User not found.');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    fetchUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userId]);
-
-  if (loading) {
+  if (isPending) {
     return (
       <div className="user-detail-state">
         <CircularProgress size={28} />
@@ -57,8 +36,8 @@ function UserDetail() {
     );
   }
 
-  if (error) {
-    return <Alert severity="error">{error}</Alert>;
+  if (isError) {
+    return <Alert severity="error">User not found.</Alert>;
   }
 
   if (!user) {

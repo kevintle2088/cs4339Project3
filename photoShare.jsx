@@ -2,6 +2,7 @@ import React from 'react';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import ReactDOM from 'react-dom/client';
 import { Grid, Typography, Paper } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   createBrowserRouter, RouterProvider, Outlet, Navigate,
 } from 'react-router-dom';
@@ -68,5 +69,11 @@ const router = createBrowserRouter([
   },
 ]);
 
+const queryClient = new QueryClient();
+
 const root = ReactDOM.createRoot(document.getElementById('photoshareapp'));
-root.render(<RouterProvider router={router} />);
+root.render(
+  <QueryClientProvider client={queryClient}>
+    <RouterProvider router={router} />
+  </QueryClientProvider>,
+);

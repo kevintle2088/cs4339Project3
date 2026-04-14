@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/system';
 import { AppBar, Toolbar, Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { useLocation, useMatch } from 'react-router-dom';
 import api from '../../lib/api';
 
@@ -14,36 +15,23 @@ function TopBar() {
   const activeUserId = photosMatch?.params?.userId || detailMatch?.params?.userId || null;
   const isPhotosRoute = Boolean(photosMatch);
 
-  const [userName, setUserName] = React.useState('');
+  const { data: activeUser, isError: isActiveUserError } = useQuery({
+    queryKey: ['users', 'detail', activeUserId],
+    queryFn: async () => {
+      const response = await api.get(`/user/${activeUserId}`);
+      return response.data;
+    },
+    enabled: Boolean(activeUserId),
+  });
 
-  React.useEffect(() => {
-    let isMounted = true;
-
-    async function loadUserName() {
-      if (!activeUserId) {
-        setUserName('');
-        return;
-      }
-
-      try {
-        const response = await api.get(`/user/${activeUserId}`);
-        const user = response.data;
-        if (isMounted && user) {
-          setUserName(`${user.first_name} ${user.last_name}`);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setUserName('Unknown User');
-        }
-      }
+  let userName = '';
+  if (activeUserId) {
+    if (isActiveUserError) {
+      userName = 'Unknown User';
+    } else if (activeUser) {
+      userName = `${activeUser.first_name} ${activeUser.last_name}`;
     }
-
-    loadUserName();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [activeUserId]);
+  }
 
   let contextText = 'PhotoShare';
   if (location.pathname === '/users') {

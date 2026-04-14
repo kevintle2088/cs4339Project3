@@ -9,47 +9,27 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../../lib/api';
 
 import './styles.css';
 
 function UserList() {
-  const [users, setUsers] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState('');
+  const {
+    data: users = [],
+    isPending,
+    isError,
+  } = useQuery({
+    queryKey: ['users', 'list'],
+    queryFn: async () => {
+      const response = await api.get('/user/list');
+      return response.data || [];
+    },
+  });
   const location = useLocation();
 
-  React.useEffect(() => {
-    let isMounted = true;
-
-    async function fetchUsers() {
-      try {
-        setLoading(true);
-        setError('');
-        const response = await api.get('/user/list');
-        if (isMounted) {
-          setUsers(response.data || []);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError('Unable to load users. Please try again.');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    fetchUsers();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  if (loading) {
+  if (isPending) {
     return (
       <div className="user-list-state">
         <CircularProgress size={26} />
@@ -58,8 +38,8 @@ function UserList() {
     );
   }
 
-  if (error) {
-    return <Alert severity="error">{error}</Alert>;
+  if (isError) {
+    return <Alert severity="error">Unable to load users. Please try again.</Alert>;
   }
 
   if (users.length === 0) {
