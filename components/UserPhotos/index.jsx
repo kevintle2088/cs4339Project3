@@ -19,6 +19,7 @@ import './styles.css';
 
 function UserPhotos() {
   const { userId } = useParams();
+
   const {
     data: owner = null,
     isPending: isOwnerPending,

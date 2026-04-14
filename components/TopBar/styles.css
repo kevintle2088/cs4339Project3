@@ -10,3 +10,19 @@
   align-items: center;
   gap: 12px;
 }
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.topbar-logout {
+  border-color: rgba(255, 255, 255, 0.8);
+}
