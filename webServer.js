@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
+import session from 'express-session';
+import bcrypt from 'bcrypt';
 
 import User from './schema/user.js';
 import Photo from './schema/photo.js';
@@ -10,14 +12,32 @@ const app = express();
 // define these in env and import in this file
 const port = process.env.PORT || 3001;
 const mongoUrl = process.env.MONGO_URL || 'mongodb://127.0.0.1/project3';
+const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
+const sessionSecret = process.env.SESSION_SECRET || 'photo-share-session-secret';
 
 const USER_LIST_PROJECTION = '_id first_name last_name';
 const USER_DETAIL_PROJECTION = '_id first_name last_name location description occupation';
+const USER_AUTH_PROJECTION = '_id first_name last_name location description occupation login_name';
 const PHOTO_PROJECTION = '_id user_id file_name date_time comments';
 
 
 // Enable CORS for frontend running on a different port
-app.use(cors());
+app.use(cors({
+  origin: clientOrigin,
+  credentials: true,
+}));
+
+app.use(express.json());
+
+app.use(session({
+  secret: sessionSecret,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+  },
+}));
 
 // Connect to MongoDB
 mongoose.connect(mongoUrl);
@@ -55,6 +75,13 @@ function shapeUserDetail(user) {
   };
 }
 
+function shapeAuthUser(user) {
+  return {
+    ...shapeUserDetail(user),
+    login_name: user.login_name,
+  };
+}
+
 function createUserLookup(users) {
   return new Map(users.map((user) => [String(user._id), shapeUserListItem(user)]));
 }
@@ -84,11 +111,157 @@ function shapePhoto(photo, userLookup) {
   };
 }
 
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function normalizeOptionalString(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function requireLogin(req, res, next) {
+  if (!req.session?.userId) {
+    return res.status(401).send('Unauthorized');
+  }
+
+  return next();
+}
+
+/**
+ * POST /admin/login
+ * Authenticates a user and stores identity in session.
+ */
+app.post('/admin/login', async (req, res) => {
+  try {
+    const loginName = req.body?.login_name;
+    const password = req.body?.password;
+
+    if (!isNonEmptyString(loginName) || !isNonEmptyString(password)) {
+      return res.status(400).send('login_name and password are required.');
+    }
+
+    const normalizedLoginName = loginName.trim();
+    const user = await User.findOne({ login_name: normalizedLoginName }).lean();
+
+    if (!user) {
+      return res.status(400).send('Invalid login_name or password.');
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.password_digest);
+    if (!passwordMatches) {
+      return res.status(400).send('Invalid login_name or password.');
+    }
+
+    req.session.userId = String(user._id);
+
+    return res.json(shapeAuthUser(user));
+  } catch (err) {
+    return res.status(500).send(err.message);
+  }
+});
+
+/**
+ * POST /admin/logout
+ * Logs out the current user by destroying their session.
+ */
+app.post('/admin/logout', (req, res) => {
+  if (!req.session?.userId) {
+    return res.status(400).send('No user is currently logged in.');
+  }
+
+  return req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).send('Unable to logout.');
+    }
+
+    res.clearCookie('connect.sid');
+    return res.status(200).send('Logged out.');
+  });
+});
+
+/**
+ * GET /admin/me
+ * Returns the currently logged-in user.
+ */
+app.get('/admin/me', requireLogin, async (req, res) => {
+  try {
+    const sessionUserId = req.session.userId;
+
+    if (!isValidObjectId(sessionUserId)) {
+      return res.status(401).send('Unauthorized');
+    }
+
+    const user = await User.findById(sessionUserId, USER_AUTH_PROJECTION).lean();
+    if (!user) {
+      return res.status(401).send('Unauthorized');
+    }
+
+    return res.json(shapeAuthUser(user));
+  } catch (err) {
+    return res.status(500).send(err.message);
+  }
+});
+
+/**
+ * POST /user
+ * Registers a new user with a bcrypt-hashed password.
+ */
+app.post('/user', async (req, res) => {
+  try {
+    const loginName = req.body?.login_name;
+    const password = req.body?.password;
+    const firstName = req.body?.first_name;
+    const lastName = req.body?.last_name;
+
+    if (!isNonEmptyString(loginName)) {
+      return res.status(400).send('login_name is required.');
+    }
+
+    if (!isNonEmptyString(password)) {
+      return res.status(400).send('password is required.');
+    }
+
+    if (!isNonEmptyString(firstName)) {
+      return res.status(400).send('first_name is required.');
+    }
+
+    if (!isNonEmptyString(lastName)) {
+      return res.status(400).send('last_name is required.');
+    }
+
+    const normalizedLoginName = loginName.trim();
+    const existingUser = await User.exists({ login_name: normalizedLoginName });
+    if (existingUser) {
+      return res.status(400).send('login_name is already in use.');
+    }
+
+    const passwordDigest = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      login_name: normalizedLoginName,
+      password_digest: passwordDigest,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      location: normalizeOptionalString(req.body?.location),
+      description: normalizeOptionalString(req.body?.description),
+      occupation: normalizeOptionalString(req.body?.occupation),
+    });
+
+    return res.json(shapeAuthUser(user));
+  } catch (err) {
+    if (err?.code === 11000) {
+      return res.status(400).send('login_name is already in use.');
+    }
+
+    return res.status(500).send(err.message);
+  }
+});
+
 /**
  * GET /user/list
  * Returns the list of users.
  */
-app.get('/user/list', async (req, res) => {
+app.get('/user/list', requireLogin, async (req, res) => {
   try {
     const users = await User.find({}, USER_LIST_PROJECTION).lean();
 
@@ -104,7 +277,7 @@ app.get('/user/list', async (req, res) => {
  * GET /user/:id
  * Returns the details of one user.
  */
-app.get('/user/:id', async (req, res) => {
+app.get('/user/:id', requireLogin, async (req, res) => {
   try {
     const userId = req.params.id;
 
@@ -131,7 +304,7 @@ app.get('/user/:id', async (req, res) => {
  * GET /photosOfUser/:id
  * Returns all photos of the given user.
  */
-app.get('/photosOfUser/:id', async (req, res) => {
+app.get('/photosOfUser/:id', requireLogin, async (req, res) => {
   try {
     const userId = req.params.id;
 

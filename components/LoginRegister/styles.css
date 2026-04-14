@@ -1,0 +1,30 @@
+.login-register-page {
+  max-width: 1100px;
+  margin: 48px auto;
+  padding: 0 16px;
+}
+
+.login-register-title {
+  margin-bottom: 6px;
+}
+
+.login-register-subtitle {
+  margin-bottom: 22px;
+}
+
+.login-register-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.login-register-card {
+  padding: 18px;
+}
+
+.login-register-form {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

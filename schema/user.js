@@ -5,11 +5,18 @@ import mongoose from "mongoose";
  * Define the Mongoose Schema for a User.
  */
 const userSchema = new mongoose.Schema({
-  first_name: String,
-  last_name: String,
-  location: String,
-  description: String,
-  occupation: String,
+  first_name: { type: String, required: true },
+  last_name: { type: String, required: true },
+  location: { type: String, default: '' },
+  description: { type: String, default: '' },
+  occupation: { type: String, default: '' },
+  login_name: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+  },
+  password_digest: { type: String, required: true },
 });
 
 /**
