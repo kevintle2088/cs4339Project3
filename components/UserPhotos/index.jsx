@@ -10,15 +10,21 @@ import {
   List,
   ListItem,
   Typography,
+  Button,
+  TextField,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
+import { useState } from 'react';
 import api from '../../lib/api';
 
 import './styles.css';
 
 function UserPhotos() {
   const { userId } = useParams();
+  const queryClient = useQueryClient();
+  const [comments , setComment]  = useState({});
+  const [commentErrors , setCommentErrors] = useState({});
 
   const {
     data: owner = null,
@@ -50,6 +56,29 @@ function UserPhotos() {
 
         throw photosErr;
       }
+    },
+  });
+  const handleCommentSubmission = (photoId) => {
+    const text = comments[photoId];
+     
+    commentMutation.mutate({
+      photoId,
+      comment: text,
+    });
+  };
+
+  const commentMutation = useMutation({
+    mutationFn: async({ photoId , comment}) => {
+      await api.post(`/commentsOfPhoto/${photoId}`,{comment});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['photos','by-user', userId],
+      });
+    },
+    onError: (err, varibles) => {
+      setCommentErrors((prev) => ({...prev, [varibles.photoId]: err?.response?.data || 'Could not post Comment'
+      }));
     },
   });
 
@@ -97,6 +126,7 @@ function UserPhotos() {
     );
   }
 
+
   return (
     <Box className="user-photos-container">
       <Typography variant="h5" className="user-photos-heading">
@@ -122,6 +152,30 @@ function UserPhotos() {
               {formatDateTime(photo.date_time)}
             </Typography>
             <Divider className="user-photo-divider" />
+            <TextField
+              fullWidth
+              placeholder='Leave a comment...'
+              value = {comments[photo._id] || ''}
+              onChange={(e) =>
+                setComment((prev)=> ({
+                  ...prev, [photo._id] : e.target.value,
+                }))
+              }
+              />
+
+              <Button
+                background = "blue"
+               size = "small"
+               onClick={() => handleCommentSubmission(photo._id)}
+               disabled = {commentMutation.isPending && commentMutation.varibles?.photoId === photo._id}
+               >
+                Upload Comment
+               </Button>
+               
+               {commentErrors[photo._id] && (
+                <Typography color = "error" variant="body2">{commentErrors[photo._id]}</Typography>
+               )}
+
             <Typography variant="subtitle1">Comments</Typography>
 
             {photo.comments?.length ? (

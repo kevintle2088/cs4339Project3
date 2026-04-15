@@ -331,6 +331,44 @@ app.get('/photosOfUser/:id', requireLogin, async (req, res) => {
   }
 });
 
+
+app.post('/commentsOfPhoto/:photoId', async (req, res) => {
+  try{
+    
+    const currentPhotoId = req.params.photoId;
+    const { comment } = req.body;
+    const photo = await Photo.findById(currentPhotoId);
+
+    if(!req.session || !req.session.userId){
+      return res.status(401).send("Unauthorized User");
+    }
+
+    if(!comment || !comment.trim()){
+      return res.status(400).send("Comment must not be empty!");
+    }
+
+    if(!isValidObjectId(currentPhotoId)){
+      return res.status(400).send("Invalid Photo Id");
+    }
+
+    if(!photo){
+      return res.status(404).send("Photo does not exist.");
+    }
+
+    photo.comments.push({
+      comment : comment.trim(),
+      user_id : req.session.userId,
+      date_time : new Date(),
+    });
+
+    await photo.save();
+
+    return res.status(200).json({message: "Comment Added"});
+  }catch(err){
+    return res.status(500).send(err.message);
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
