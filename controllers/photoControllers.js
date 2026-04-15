@@ -35,9 +35,10 @@ export async function getPhotosOfUser(req, res) {
 export async function addComment(req, res) {
   try {
     const currentPhotoId = req.params.photoId;
-    const { comment } = req.body;
+    const rawComment = req.body?.comment;
+    const comment = typeof rawComment === 'string' ? rawComment.trim() : '';
 
-    if (!comment || !comment.trim()) {
+    if (!comment) {
       return res.status(400).send('Comment must not be empty!');
     }
 
@@ -52,7 +53,7 @@ export async function addComment(req, res) {
     }
 
     photo.comments.push({
-      comment: comment.trim(),
+      comment,
       user_id: req.session.userId,
       date_time: new Date(),
     });
