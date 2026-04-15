@@ -23,8 +23,8 @@ import './styles.css';
 function UserPhotos() {
   const { userId } = useParams();
   const queryClient = useQueryClient();
-  const [comments , setComment]  = useState({});
-  const [commentErrors , setCommentErrors] = useState({});
+  const [comments, setComment] = useState({});
+  const [commentErrors, setCommentErrors] = useState({});
 
   const {
     data: owner = null,
@@ -59,8 +59,16 @@ function UserPhotos() {
     },
   });
   const handleCommentSubmission = (photoId) => {
-    const text = comments[photoId];
-     
+    const text = (comments[photoId] || '').trim();
+
+    if (!text) {
+      setCommentErrors((prev) => ({
+        ...prev,
+        [photoId]: 'Comment must not be empty!',
+      }));
+      return;
+    }
+
     commentMutation.mutate({
       photoId,
       comment: text,
@@ -68,16 +76,26 @@ function UserPhotos() {
   };
 
   const commentMutation = useMutation({
-    mutationFn: async({ photoId , comment}) => {
-      await api.post(`/commentsOfPhoto/${photoId}`,{comment});
+    mutationFn: async ({ photoId, comment }) => {
+      await api.post(`/commentsOfPhoto/${photoId}`, { comment });
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      setCommentErrors((prev) => ({
+        ...prev,
+        [variables.photoId]: '',
+      }));
+      setComment((prev) => ({
+        ...prev,
+        [variables.photoId]: '',
+      }));
       queryClient.invalidateQueries({
-        queryKey: ['photos','by-user', userId],
+        queryKey: ['photos', 'by-user', userId],
       });
     },
-    onError: (err, varibles) => {
-      setCommentErrors((prev) => ({...prev, [varibles.photoId]: err?.response?.data || 'Could not post Comment'
+    onError: (err, variables) => {
+      setCommentErrors((prev) => ({
+        ...prev,
+        [variables.photoId]: err?.response?.data || 'Could not post Comment',
       }));
     },
   });
@@ -154,27 +172,26 @@ function UserPhotos() {
             <Divider className="user-photo-divider" />
             <TextField
               fullWidth
-              placeholder='Leave a comment...'
-              value = {comments[photo._id] || ''}
+              placeholder="Leave a comment..."
+              value={comments[photo._id] || ''}
               onChange={(e) =>
-                setComment((prev)=> ({
-                  ...prev, [photo._id] : e.target.value,
+                setComment((prev) => ({
+                  ...prev, [photo._id]: e.target.value,
                 }))
               }
-              />
+            />
 
-              <Button
-                background = "blue"
-               size = "small"
-               onClick={() => handleCommentSubmission(photo._id)}
-               disabled = {commentMutation.isPending && commentMutation.varibles?.photoId === photo._id}
-               >
-                Upload Comment
-               </Button>
-               
-               {commentErrors[photo._id] && (
-                <Typography color = "error" variant="body2">{commentErrors[photo._id]}</Typography>
-               )}
+            <Button
+              size="small"
+              onClick={() => handleCommentSubmission(photo._id)}
+              disabled={commentMutation.isPending && commentMutation.variables?.photoId === photo._id}
+            >
+              Upload Comment
+            </Button>
+
+            {commentErrors[photo._id] && (
+              <Typography color="error" variant="body2">{commentErrors[photo._id]}</Typography>
+            )}
 
             <Typography variant="subtitle1">Comments</Typography>
 

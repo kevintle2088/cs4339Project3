@@ -7,6 +7,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import photoRoutes from './routes/photoRoutes.js';
 import { addComment } from './controllers/photoControllers.js';
+import { requireLogin } from './middleware/requireLogin.js';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -30,6 +31,6 @@ mongoose.connection.once('open', () => console.log('Connected to MongoDB'));
 app.use('/admin', adminRoutes);
 app.use('/user', userRoutes);
 app.use('/photosOfUser', photoRoutes);
-app.post('/commentsOfPhoto/:photoId', addComment);
+app.post('/commentsOfPhoto/:photoId', requireLogin, addComment);
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
