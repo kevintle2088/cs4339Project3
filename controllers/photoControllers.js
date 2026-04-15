@@ -36,11 +36,6 @@ export async function addComment(req, res) {
   try {
     const currentPhotoId = req.params.photoId;
     const { comment } = req.body;
-    const photo = await Photo.findById(currentPhotoId);
-
-    if (!req.session || !req.session.userId) {
-      return res.status(401).send('Unauthorized User');
-    }
 
     if (!comment || !comment.trim()) {
       return res.status(400).send('Comment must not be empty!');
@@ -49,6 +44,8 @@ export async function addComment(req, res) {
     if (!isValidObjectId(currentPhotoId)) {
       return res.status(400).send('Invalid Photo Id');
     }
+
+    const photo = await Photo.findById(currentPhotoId);
 
     if (!photo) {
       return res.status(404).send('Photo does not exist.');

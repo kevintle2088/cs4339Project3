@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { getPhotosOfUser } from '../controllers/photoControllers.js';
-import { addComment } from '../controllers/photoControllers.js';
 import { requireLogin } from '../middleware/requireLogin.js';
 
 const router = Router();
