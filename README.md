@@ -1,31 +1,42 @@
-# Project 3: Authentication, Server State, and Mutations
+# Project 4: Part 1 and 2
 
 ## Prerequisites
 - Node.js LTS (>= 18), npm (>= 9)
-- MongoDB on `127.0.0.1`
+- MongoDB Atlas cluster
+- Cloudinary account with unsigned upload preset
 
 ## Overview
-- TanStack Query for server state (`useQuery` / `useMutation`)
-- Express sessions + **bcrypt** (`password_digest` on `User`; never store plain passwords)
+- TanStack Query for server state (useQuery / useMutation)
+- Express sessions + bcrypt
 - Login, logout, registration, and commenting on photos
-- Git/GitHub workflow per course spec (feature branches, PRs)
+- Direct browser-to-Cloudinary photo uploads in MongoDB Atlas
+- Photo like/unlike toggle with like counts
 
 ## Setup
 ```bash
 npm install
-cd test && npm install && cd ..
+cd test && npm install
 ```
 
-Copy your working Project 2 app into this tree if you are merging starter files from the course zip.
+Create a .env file in the root:
 
-**Database name:** `mongodb://127.0.0.1/project3` in `webServer.js` and `loadDatabase.js`.
+```env
+MONGODB_URI=your_mongodb_atlas_connection_string
+VITE_API_URL=http://localhost:3001
+VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
+VITE_CLOUDINARY_PRESET=your_unsigned_upload_preset
+SESSION_SECRET=your_session_secret
+CLIENT_ORIGIN=http://localhost:3000
+```
+
+### Seed Atlas Database
 
 ```bash
-node loadDatabase.js
+npm run seed
 ```
 
 ### Seeded passwords
-`loadDatabase.js` stores a fixed bcrypt digest for every demo user. That digest is the common test vector that verifies against the plaintext **`password`** (not the string `weak`). Use **`password`** when logging in as seeded users (e.g. `login_name` `took`, password `password`). Your own registrations still choose any password; those are hashed with bcrypt on the server.
+loadDatabase.js stores a fixed bcrypt digest for every demo user
 
 ## Run
 ```bash
@@ -35,7 +46,7 @@ npm run client   # Vite, port 3000
 npm run dev
 ```
 
-## API (course contract)
+## API
 | Method | Path | Auth |
 |--------|------|------|
 | POST | `/admin/login` | no |
@@ -44,26 +55,20 @@ npm run dev
 | GET | `/user/list` | yes |
 | GET | `/user/:id` | yes |
 | GET | `/photosOfUser/:id` | yes |
+| POST | `/photos` | yes |
+| POST | `/photos/:photoId/like` | yes |
 | POST | `/commentsOfPhoto/:photoId` | yes |
 
-Optional for the UI: `GET /admin/me` returning the session user (not required by the bundled tests).
+`GET /admin/me` returning the session user
 
 ## Testing
 Reset DB, start the server on port 3001, then:
 ```bash
 cd test
-npm install
 npm test
 ```
-
-Tests assume **only** data from `loadDatabase.js`. No `/test/info` or `/test/count` routes are required or tested.
 
 ## Lint
 ```bash
 npm run lint
 ```
-
-## Style (course)
-- MVC-style split (routes/controllers/models), thin `webServer.js`
-- Central frontend API module (e.g. `api.js`)
-- ESLint clean; remove or disable React Query Devtools before submit
