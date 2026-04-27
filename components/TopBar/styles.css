@@ -21,8 +21,29 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 10px;
+}
+
+.topbar-add-photo {
+  white-space: nowrap;
 }
 
 .topbar-logout {
   border-color: rgba(255, 255, 255, 0.8);
+}
+
+.topbar-file-input {
+  display: block;
+  margin: 14px 0 6px;
+}
+
+.topbar-selected-file {
+  margin-bottom: 10px;
+}
+
+.topbar-upload-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
 }

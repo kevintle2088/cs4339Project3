@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Alert,
   Box,
+  Button,
   Card,
   CardContent,
   CardMedia,
@@ -9,9 +10,8 @@ import {
   Divider,
   List,
   ListItem,
-  Typography,
-  Button,
   TextField,
+  Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
@@ -25,6 +25,15 @@ function UserPhotos() {
   const queryClient = useQueryClient();
   const [comments, setComment] = useState({});
   const [commentErrors, setCommentErrors] = useState({});
+  const [likeErrors, setLikeErrors] = useState({});
+
+  const { data: currentUser = null } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: async () => {
+      const response = await api.get('/admin/me');
+      return response.data || null;
+    },
+  });
 
   const {
     data: owner = null,
@@ -46,7 +55,7 @@ function UserPhotos() {
     queryKey: ['photos', 'by-user', userId],
     queryFn: async () => {
       try {
-        const response = await api.get(`/photosOfUser/${userId}`);
+        const response = await api.get(`/photosOfUser/${userId}?includeLikes=true`);
         return response.data || [];
       } catch (photosErr) {
         const statusCode = photosErr?.response?.status;
@@ -96,6 +105,26 @@ function UserPhotos() {
       setCommentErrors((prev) => ({
         ...prev,
         [variables.photoId]: err?.response?.data || 'Could not post Comment',
+      }));
+    },
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async (photoId) => {
+      const response = await api.post(`/photos/${photoId}/like`, {});
+      return response.data;
+    },
+    onSuccess: (_data, photoId) => {
+      setLikeErrors((prev) => ({
+        ...prev,
+        [photoId]: '',
+      }));
+      queryClient.invalidateQueries({ queryKey: ['photos', 'by-user', userId] });
+    },
+    onError: (err, photoId) => {
+      setLikeErrors((prev) => ({
+        ...prev,
+        [photoId]: err?.response?.data || 'Unable to update like right now.',
       }));
     },
   });
@@ -155,74 +184,105 @@ function UserPhotos() {
         {owner.last_name}
       </Typography>
 
-      {photos.map((photo) => (
-        <Card key={photo._id} className="user-photo-card" variant="outlined">
-          <CardMedia
-            component="img"
-            image={`/images/${photo.file_name}`}
-            alt={`Uploaded by ${owner.first_name} ${owner.last_name}`}
-            className="user-photo-image"
-          />
-          <CardContent>
-            <Typography variant="body2" color="text.secondary" className="user-photo-date">
-              Uploaded:
-              {' '}
-              {formatDateTime(photo.date_time)}
-            </Typography>
-            <Divider className="user-photo-divider" />
-            <TextField
-              fullWidth
-              placeholder="Leave a comment..."
-              value={comments[photo._id] || ''}
-              onChange={(e) =>
-                setComment((prev) => ({
-                  ...prev, [photo._id]: e.target.value,
-                }))
-              }
+      {photos.map((photo) => {
+        const likeUserIds = Array.isArray(photo.likes) ? photo.likes.map((likeUserId) => String(likeUserId)) : [];
+        const currentUserId = currentUser?._id ? String(currentUser._id) : null;
+        const isLikedByCurrentUser = currentUserId ? likeUserIds.includes(currentUserId) : false;
+        const likeCount = likeUserIds.length;
+
+        return (
+          <Card key={photo._id} className="user-photo-card" variant="outlined">
+            <CardMedia
+              component="img"
+              image={photo.file_name}
+              alt={`Uploaded by ${owner.first_name} ${owner.last_name}`}
+              className="user-photo-image"
             />
+            <CardContent>
+              <Typography variant="body2" color="text.secondary" className="user-photo-date">
+                Uploaded:
+                {' '}
+                {formatDateTime(photo.date_time)}
+              </Typography>
 
-            <Button
-              size="small"
-              onClick={() => handleCommentSubmission(photo._id)}
-              disabled={commentMutation.isPending && commentMutation.variables?.photoId === photo._id}
-            >
-              Upload Comment
-            </Button>
+              <Box className="photo-like-row">
+                <Button
+                  size="small"
+                  variant={isLikedByCurrentUser ? 'contained' : 'outlined'}
+                  color={isLikedByCurrentUser ? 'error' : 'primary'}
+                  onClick={() => likeMutation.mutate(photo._id)}
+                  disabled={likeMutation.isPending && likeMutation.variables === photo._id}
+                >
+                  {isLikedByCurrentUser ? 'Unlike' : 'Like'}
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  {likeCount}
+                  {' '}
+                  {likeCount === 1 ? 'like' : 'likes'}
+                </Typography>
+              </Box>
 
-            {commentErrors[photo._id] && (
-              <Typography color="error" variant="body2">{commentErrors[photo._id]}</Typography>
-            )}
+              {likeErrors[photo._id] ? (
+                <Typography color="error" variant="body2" className="photo-like-error">
+                  {likeErrors[photo._id]}
+                </Typography>
+              ) : null}
 
-            <Typography variant="subtitle1">Comments</Typography>
+              <Divider className="user-photo-divider" />
+              <TextField
+                fullWidth
+                placeholder="Leave a comment..."
+                value={comments[photo._id] || ''}
+                onChange={(e) =>
+                  setComment((prev) => ({
+                    ...prev, [photo._id]: e.target.value,
+                  }))
+                }
+              />
 
-            {photo.comments?.length ? (
-              <List disablePadding>
-                {photo.comments.map((comment) => (
-                  <ListItem key={comment._id} disableGutters className="photo-comment-item">
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatDateTime(comment.date_time)}
-                      </Typography>
-                      <Typography variant="body1">
-                        <Link to={`/users/${comment.user._id}`} className="photo-comment-user-link">
-                          {comment.user.first_name}
+              <Button
+                size="small"
+                onClick={() => handleCommentSubmission(photo._id)}
+                disabled={commentMutation.isPending && commentMutation.variables?.photoId === photo._id}
+              >
+                Upload Comment
+              </Button>
+
+              {commentErrors[photo._id] && (
+                <Typography color="error" variant="body2">{commentErrors[photo._id]}</Typography>
+              )}
+
+              <Typography variant="subtitle1">Comments</Typography>
+
+              {photo.comments?.length ? (
+                <List disablePadding>
+                  {photo.comments.map((comment) => (
+                    <ListItem key={comment._id} disableGutters className="photo-comment-item">
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {formatDateTime(comment.date_time)}
+                        </Typography>
+                        <Typography variant="body1">
+                          <Link to={`/users/${comment.user._id}`} className="photo-comment-user-link">
+                            {comment.user.first_name}
+                            {' '}
+                            {comment.user.last_name}
+                          </Link>
+                          :
                           {' '}
-                          {comment.user.last_name}
-                        </Link>
-                        :
-                        {' '}
-                        {comment.comment}
-                      </Typography>
-                    </Box>
-                  </ListItem>
-                ))}
-              </List>
-            ) : (
-              <Typography variant="body2" color="text.secondary">No comments yet.</Typography>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+                          {comment.comment}
+                        </Typography>
+                      </Box>
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography variant="body2" color="text.secondary">No comments yet.</Typography>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
     </Box>
   );
 }

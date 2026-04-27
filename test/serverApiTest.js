@@ -388,8 +388,12 @@ describe("Photo App: Server API Tests", function () {
                   "wrong number of photos returned"
                 );
                 _.forEach(real_photos, function (real_photo) {
-                  const matches = _.filter(photos, {
-                    file_name: real_photo.file_name,
+                  const matches = _.filter(photos, function (candidatePhoto) {
+                    const candidateFileName = candidatePhoto.file_name || "";
+                    return (
+                      candidateFileName === real_photo.file_name ||
+                      candidateFileName.endsWith("/" + real_photo.file_name)
+                    );
                   });
                   assert.strictEqual(
                     matches.length,
@@ -408,7 +412,11 @@ describe("Photo App: Server API Tests", function () {
                   );
                   assert.strictEqual(photo.user_id, id);
                   assertEqualDates(photo.date_time, real_photo.date_time);
-                  assert.strictEqual(photo.file_name, real_photo.file_name);
+                  assert(
+                    photo.file_name === real_photo.file_name ||
+                      photo.file_name.endsWith("/" + real_photo.file_name),
+                    "photo file_name does not match expected filename"
+                  );
 
                   if (real_photo.comments) {
                     assert.strictEqual(

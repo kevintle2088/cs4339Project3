@@ -26,6 +26,17 @@
 	margin: 10px 0;
 }
 
+.photo-like-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 8px 0;
+}
+
+.photo-like-error {
+	margin-top: 4px;
+}
+
 .photo-comment-item {
 	padding: 8px 0;
 	border-bottom: 1px solid #eee;
