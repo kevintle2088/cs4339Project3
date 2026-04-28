@@ -1,0 +1,2 @@
+- **Frontend (Vercel)**: cs4339-project3.vercel.app
+- **Backend (Render)**: https://cs4339project3.onrender.com/
