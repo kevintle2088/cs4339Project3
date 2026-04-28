@@ -32,6 +32,7 @@ if (!process.env.SESSION_SECRET) {
 
 app.use(cors({ origin: clientOrigin, credentials: true }));
 app.use(express.json());
+app.set('trust proxy', 1);
 app.use(session({
   secret: sessionSecret,
   resave: false,
