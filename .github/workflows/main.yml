@@ -26,6 +26,11 @@ jobs:
 
       - name: Install test dependencies
         run: cd test && npm install
+        
+      - name: Seed database
+        run: node loadDatabase.js
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
 
       - name: Start server
         run: node webServer.js &
