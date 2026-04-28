@@ -18,6 +18,7 @@ const port = process.env.PORT || 3001;
 const mongoUrl = process.env.MONGODB_URI;
 const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
 const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(48).toString('hex');
+const isProduction = process.env.NODE_ENV === 'production';
 
 if (!mongoUrl) {
   throw new Error('MONGODB_URI is required in environment variables.');
