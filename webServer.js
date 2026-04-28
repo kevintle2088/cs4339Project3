@@ -6,6 +6,8 @@ import cors from 'cors';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
 import session from 'express-session';
+import MongoStore from 'connect-mongo';
+
 
 import adminRoutes from './routes/adminRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -34,8 +36,8 @@ app.use(session({
   secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({ mongoUrl }),
   cookie: { httpOnly: true, sameSite: isProduction ?  'none' : 'lax', secure: isProduction},
-
 }));
 
 mongoose.connect(mongoUrl);
