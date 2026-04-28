@@ -33,7 +33,8 @@ app.use(session({
   secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: 'none', secure: true},
+  cookie: { httpOnly: true, sameSite: isProduction ?  'none' : 'lax', secure: isProduction},
+
 }));
 
 mongoose.connect(mongoUrl);
