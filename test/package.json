@@ -14,6 +14,7 @@
     "mocha": "^9.2.0"
   },
   "scripts": {
-    "test": "mocha serverApiTest.js sessionInputApiTest.js"
+    "pretest": "npm --prefix .. run seed",
+    "test": "mocha serverApiTest.js sessionInputApiTest.js photoUploadAndLikeTests.js"
   }
 }

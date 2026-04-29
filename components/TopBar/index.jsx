@@ -177,7 +177,7 @@ function TopBar({ currentUser }) {
                 disabled={uploadPhotoMutation.isPending}
                 className="topbar-add-photo"
               >
-                Upload Photo
+                Add Photo
               </Button>
               <Button
                 variant="outlined"
