@@ -14,7 +14,7 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 import {
-  createBrowserRouter, RouterProvider, Outlet, Navigate,
+  createHashRouter, RouterProvider, Outlet, Navigate,
 } from 'react-router-dom';
 
 import './styles/main.css';
@@ -136,7 +136,7 @@ function UserLayout() {
   return <Outlet />;
 }
 
-const router = createBrowserRouter([
+const router = createHashRouter([
   {
     path: '/login-register',
     element: <LoginRegisterRoute />,
