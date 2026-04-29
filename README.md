@@ -1,16 +1,26 @@
-# Project 4: Part 1 and 2
+# Project 4:
 
 ## Prerequisites
 - Node.js LTS (>= 18), npm (>= 9)
 - MongoDB Atlas cluster
 - Cloudinary account with unsigned upload preset
+- Vercel and Render Accounts 
 
 ## Overview
-- TanStack Query for server state (useQuery / useMutation)
-- Express sessions + bcrypt
-- Login, logout, registration, and commenting on photos
-- Direct browser-to-Cloudinary photo uploads in MongoDB Atlas
-- Photo like/unlike toggle with like counts
+
+This is a photo sharing application built with React, Express, and MongoDB Atlas. Features include:
+- User authentication (login, register, logout)
+- Photo uploads directly to Cloudinary (unsigned preset)
+- Like/unlike photos with persistent like counts
+- Comments on photos with user information
+- Server state management with TanStack Query
+- Secure sessions with express-session and bcrypt password hashing
+- Responsive UI with Material-UI components
+
+## Deployed Application
+
+- **Frontend (Vercel)**: cs4339-project3.vercel.app
+- **Backend (Render)**: https://cs4339project3.onrender.com/
 
 ## Setup
 ```bash
@@ -45,6 +55,53 @@ npm run client   # Vite, port 3000
 # or
 npm run dev
 ```
+
+## Docker
+
+Build the backend image from the project root:
+
+```bash
+docker build -t photo-app-backend .
+```
+
+Run the backend container with environment variables from .env:
+
+```bash
+docker run -p 3001:3001 --env-file .env --name backend-docker photo-app-backend
+```
+
+Stop Container 
+
+```bash
+docker stop backend-docker
+docker rm backend-docker
+```
+
+## GitHub Actions CI/CD
+
+The workflow lives at [.github/workflows/main.yml](.github/workflows/main.yml) and runs on every push to `main`.
+
+
+## Project Structure
+
+```
+├── webServer.js              # Express server entry point
+├── photoShare.jsx            # React app entry point
+├── controllers/              # Business logic for routes
+├── routes/                   # API endpoint definitions
+├── schema/                   # Mongoose models
+├── middleware/               # Custom middleware (e.g., requireLogin)
+├── lib/                      # Utility functions (api.js, helper functions)
+├── components/               # React components
+├── styles/                   # CSS files
+├── test/                     # Mocha test suite
+├── Dockerfile                # Docker configuration
+├── vercel.json               # Vercel routing configuration
+├── .github/workflows/        # GitHub Actions CI/CD pipeline
+├── .env                      # Local environment variables (not in git)
+└── .gitignore                # Git ignore rules
+```
+
 
 ## API
 | Method | Path | Auth |
